@@ -4,7 +4,8 @@
   "package": "mod.gfix.dev.gravisauth.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ServerLoginNetworkHandlerMixin"
+    "ServerLoginNetworkHandlerMixin",
+    "ServerLoginNetworkHandlerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
