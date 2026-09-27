@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "gravisauth",
+  "version": "${version}",
+  "name": "GravisAuth",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "GPL-3.0",
+  "icon": "assets/gravisauth/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "mod.gfix.dev.gravisauth.client.GravisauthClient"
+    ],
+    "main": [
+      "mod.gfix.dev.gravisauth.Gravisauth"
+    ]
+  },
+  "mixins": [
+    "gravisauth.mixins.json",
+    {
+      "config": "gravisauth.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
