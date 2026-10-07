@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ServerLoginNetworkHandlerMixin",
-    "ServerLoginNetworkHandlerAccessor"
+    "ServerLoginNetworkHandlerAccessor",
+    "ServerConfigurationNetworkHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
