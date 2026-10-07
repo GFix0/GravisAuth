@@ -20,6 +20,13 @@ public class Gravisauth implements ModInitializer {
 
         CONFIG = GravisAuthConfigManager.load();
 
+        LOGGER.info("GravisAuth server functionality enabled: {}", CONFIG.enabled);
+
+        if (!CONFIG.enabled) {
+            LOGGER.info("GravisAuth server functionality is disabled.");
+            return;
+        }
+
         LOGGER.info(
                 "Database config: {}:{} / {}",
                 CONFIG.database.host,

@@ -1,6 +1,7 @@
 package mod.gfix.dev.gravisauth.mixin;
 
 import com.mojang.authlib.GameProfile;
+import mod.gfix.dev.gravisauth.Gravisauth;
 import mod.gfix.dev.gravisauth.account.GravisAccount;
 import mod.gfix.dev.gravisauth.account.GravisAccountManager;
 import net.minecraft.network.packet.c2s.login.EnterConfigurationC2SPacket;
@@ -23,6 +24,10 @@ public abstract class ServerLoginNetworkHandlerMixin {
             GameProfile profile,
             CallbackInfo ci
     ) {
+        if (!Gravisauth.CONFIG.enabled) {
+            return;
+        }
+
         GravisAccountManager accountManager = new GravisAccountManager();
 
         GravisAccount account = accountManager.findByUsername(profile.name());
@@ -85,6 +90,10 @@ public abstract class ServerLoginNetworkHandlerMixin {
             EnterConfigurationC2SPacket packet,
             CallbackInfo ci
     ) {
+        if (!Gravisauth.CONFIG.enabled) {
+            return;
+        }
+
         System.out.println(
                 "[GravisAuth] Entering configuration"
         );
