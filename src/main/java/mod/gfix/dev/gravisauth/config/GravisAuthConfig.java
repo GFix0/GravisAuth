@@ -2,6 +2,8 @@ package mod.gfix.dev.gravisauth.config;
 
 public class GravisAuthConfig {
 
+    public boolean enabled = false;
+
     public Database database = new Database();
 
     public static class Database {

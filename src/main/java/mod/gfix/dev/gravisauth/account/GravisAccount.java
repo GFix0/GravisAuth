@@ -1,29 +1,31 @@
 package mod.gfix.dev.gravisauth.account;
 
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public class GravisAccount {
 
+    private final int id;
     private final String username;
-    private final String originalUsername;
+    private final boolean verified;
     private final UUID uuid;
 
-    public GravisAccount(String username, String originalUsername) {
+    public GravisAccount(int id, String username, boolean verified, UUID uuid) {
+        this.id = id;
         this.username = username;
-        this.originalUsername = originalUsername;
+        this.verified = verified;
+        this.uuid = uuid;
+    }
 
-        this.uuid = UUID.nameUUIDFromBytes(
-                ("Gravis:" + originalUsername).getBytes(StandardCharsets.UTF_8)
-        );
+    public int getId() {
+        return id;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public String getOriginalUsername() {
-        return originalUsername;
+    public boolean isVerified() {
+        return verified;
     }
 
     public UUID getUuid() {
