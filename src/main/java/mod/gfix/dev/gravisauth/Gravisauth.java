@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import mod.gfix.dev.gravisauth.config.GravisAuthConfig;
 import mod.gfix.dev.gravisauth.config.GravisAuthConfigManager;
 import mod.gfix.dev.gravisauth.database.GravisDatabase;
+import mod.gfix.dev.gravisauth.network.GravisAuthNetworking;
 
 public class Gravisauth implements ModInitializer {
 
@@ -21,6 +22,8 @@ public class Gravisauth implements ModInitializer {
         CONFIG = GravisAuthConfigManager.load();
 
         LOGGER.info("GravisAuth server functionality enabled: {}", CONFIG.enabled);
+
+        GravisAuthNetworking.initialize();
 
         if (!CONFIG.enabled) {
             LOGGER.info("GravisAuth server functionality is disabled.");
