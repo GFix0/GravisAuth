@@ -27,6 +27,12 @@ public class GravisAuthConfig {
 
     public int throttleMinutes = 10;
 
+    /**
+     * Lifetime of a remembered-login token. Every use slides the expiry
+     * forward by this many days.
+     */
+    public int tokenLifetimeDays = 30;
+
     public Database database = new Database();
 
     public static class Database {

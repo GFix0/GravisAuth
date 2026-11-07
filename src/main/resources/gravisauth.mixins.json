@@ -7,6 +7,7 @@
     "ServerConfigurationNetworkHandlerMixin",
     "ServerConfigurationNetworkHandlerAccessor",
     "ServerCommonNetworkHandlerAccessor",
+    "ClientConnectionAccessor",
     "ServerLoginNetworkHandlerMixin",
     "PlayerManagerMixin"
   ],

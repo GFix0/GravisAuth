@@ -44,12 +44,16 @@ public class GravisAuthScreen extends Screen {
                 Text.literal("Gravis username")
         );
 
-        String lastUsername = this.client != null
-                ? this.client.getSession().getUsername()
-                : "";
+        String prefilled = ClientAuthState.pendingUsername();
 
-        if (lastUsername != null && !lastUsername.isBlank()) {
-            this.usernameField.setText(lastUsername);
+        if (prefilled == null || prefilled.isBlank()) {
+            prefilled = this.client != null
+                    ? this.client.getSession().getUsername()
+                    : "";
+        }
+
+        if (prefilled != null && !prefilled.isBlank()) {
+            this.usernameField.setText(prefilled);
         }
 
         this.addDrawableChild(this.usernameField);
@@ -86,10 +90,20 @@ public class GravisAuthScreen extends Screen {
 
         this.addDrawableChild(this.loginButton);
 
+        if (ClientAuthState.busyMessage() != null) {
+            this.usernameField.setEditable(false);
+            this.passwordField.setEditable(false);
+            this.loginButton.active = false;
+        }
+
         this.setInitialFocus(this.usernameField);
     }
 
     private void submit() {
+        if (ClientAuthState.busyMessage() != null) {
+            return;
+        }
+
         String username = this.usernameField.getText().trim();
         String password = this.passwordField.getText();
 
@@ -114,6 +128,8 @@ public class GravisAuthScreen extends Screen {
 
         if (this.loginButton != null) {
             this.loginButton.active = true;
+            this.usernameField.setEditable(true);
+            this.passwordField.setEditable(true);
         }
     }
 
@@ -154,7 +170,15 @@ public class GravisAuthScreen extends Screen {
                 0xA0A0A0
         );
 
-        if (this.error != null) {
+        if (ClientAuthState.busyMessage() != null) {
+            context.drawCenteredTextWithShadow(
+                    this.textRenderer,
+                    Text.literal(ClientAuthState.busyMessage()),
+                    this.width / 2,
+                    this.height / 2 + 42,
+                    0xA0A0A0
+            );
+        } else if (this.error != null) {
             context.drawCenteredTextWithShadow(
                     this.textRenderer,
                     Text.literal(this.error),

@@ -4,14 +4,18 @@ import com.mojang.authlib.GameProfile;
 import mod.gfix.dev.gravisauth.Gravisauth;
 import mod.gfix.dev.gravisauth.account.GravisAccount;
 import mod.gfix.dev.gravisauth.account.GravisAccountManager;
+import mod.gfix.dev.gravisauth.account.AuthTokens;
 import mod.gfix.dev.gravisauth.auth.AuthSession;
 import mod.gfix.dev.gravisauth.auth.AuthSessions;
 import mod.gfix.dev.gravisauth.compat.LuckPermsCompat;
+import mod.gfix.dev.gravisauth.compat.PacketEventsCompat;
 import mod.gfix.dev.gravisauth.crypto.GravisCrypto;
+import mod.gfix.dev.gravisauth.mixin.ClientConnectionAccessor;
 import mod.gfix.dev.gravisauth.mixin.ServerCommonNetworkHandlerAccessor;
 import mod.gfix.dev.gravisauth.mixin.ServerConfigurationNetworkHandlerAccessor;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
+import net.minecraft.network.ClientConnection;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerConfigurationNetworkHandler;
 import net.minecraft.text.Text;
@@ -19,15 +23,23 @@ import net.minecraft.text.Text;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 public final class GravisAuthNetworking {
 
     private static final String CHALLENGE_PREFIX = "challenge:";
     private static final String AUTH_PREFIX = "auth:";
+    private static final String TOKEN_PREFIX = "token:";
     private static final String FAIL_PREFIX = "fail:";
     private static final String OK = "ok";
+    private static final String OK_PREFIX = "ok:";
 
+    /**
+     * Machine-readable reason sent when a saved login is no longer valid.
+     * The client replaces it with a localised message and forgets the token.
+     */
+    public static final String TOKEN_INVALID = "token-invalid";
     private static final GravisAccountManager ACCOUNTS =
             new GravisAccountManager();
 
@@ -96,7 +108,17 @@ public final class GravisAuthNetworking {
             return;
         }
 
-        if (message == null || !message.startsWith(AUTH_PREFIX)) {
+        if (message == null) {
+            return;
+        }
+
+        boolean tokenLogin;
+
+        if (message.startsWith(AUTH_PREFIX)) {
+            tokenLogin = false;
+        } else if (message.startsWith(TOKEN_PREFIX)) {
+            tokenLogin = true;
+        } else {
             return;
         }
 
@@ -108,12 +130,13 @@ public final class GravisAuthNetworking {
         }
 
         String username;
-        String password;
+        String secret;
+        SecretKeySpec key;
 
         try {
             PublicKey clientKey = GravisCrypto.decodePublicKey(parts[1]);
 
-            SecretKeySpec key = GravisCrypto.deriveKey(
+            key = GravisCrypto.deriveKey(
                     session.getKeyPair().getPrivate(),
                     clientKey
             );
@@ -138,7 +161,7 @@ public final class GravisAuthNetworking {
                     plaintext, 0, separator, StandardCharsets.UTF_8
             );
 
-            password = new String(
+            secret = new String(
                     plaintext,
                     separator + 1,
                     plaintext.length - separator - 1,
@@ -153,11 +176,45 @@ public final class GravisAuthNetworking {
             return;
         }
 
+        if (tokenLogin) {
+            GravisAccount account;
+
+            try {
+                account = AuthTokens.verify(secret);
+            } catch (SQLException e) {
+                Gravisauth.LOGGER.error(
+                        "Database error while validating a login token", e
+                );
+
+                fail(handler, session, "Authentication unavailable");
+                return;
+            }
+
+            if (account == null) {
+                fail(handler, session, TOKEN_INVALID);
+                return;
+            }
+
+            Gravisauth.LOGGER.info(
+                    "Authenticated {} with a saved login",
+                    account.getUsername()
+            );
+
+            succeed(handler, session, account, secret, key);
+            return;
+        }
+
         GravisAccountManager.Result result =
-                ACCOUNTS.authenticate(username, password);
+                ACCOUNTS.authenticate(username, secret);
 
         switch (result.status()) {
-            case OK -> succeed(handler, session, result.account());
+            case OK -> succeed(
+                    handler,
+                    session,
+                    result.account(),
+                    AuthTokens.issue(result.account().getId()),
+                    key
+            );
             case NOT_VERIFIED -> fail(
                     handler,
                     session,
@@ -181,7 +238,9 @@ public final class GravisAuthNetworking {
     private static void succeed(
             ServerConfigurationNetworkHandler handler,
             AuthSession session,
-            GravisAccount account
+            GravisAccount account,
+            String token,
+            SecretKeySpec key
     ) {
         session.setAuthenticated(true);
 
@@ -193,7 +252,23 @@ public final class GravisAuthNetworking {
         ((ServerConfigurationNetworkHandlerAccessor) handler)
                 .gravisAuth$setProfile(profile);
 
-        send(handler, OK);
+        /*
+         * PacketEvents indexes its UUID to channel map from the login-phase
+         * profile. Re-key it before the play phase starts so GrimAC can
+         * resolve the native (Gravis UUID) player; otherwise its platform
+         * player is never created and respawns fail.
+         */
+        ClientConnection connection =
+                ((ServerCommonNetworkHandlerAccessor) handler)
+                        .gravisAuth$getConnection();
+
+        PacketEventsCompat.rekey(
+                ((ClientConnectionAccessor) connection).gravisAuth$getChannel(),
+                account.getUuid(),
+                account.getUsername()
+        );
+
+        sendToken(handler, account, token, key);
 
         Gravisauth.LOGGER.info(
                 "Authenticated {} as Gravis account #{}",
@@ -249,6 +324,42 @@ public final class GravisAuthNetworking {
             Gravisauth.LOGGER.warn(
                     "Could not finish the configuration phase", e
             );
+        }
+    }
+
+    /**
+     * Sends the success response. When a token is available it is
+     * encrypted with the ephemeral session key and sent together with the
+     * account's current username, so a rename is picked up by the client.
+     */
+    private static void sendToken(
+            ServerConfigurationNetworkHandler handler,
+            GravisAccount account,
+            String token,
+            SecretKeySpec key
+    ) {
+        if (token == null) {
+            send(handler, OK);
+            return;
+        }
+
+        try {
+            String payload = account.getUsername() + "\u0000" + token;
+
+            String encrypted = GravisCrypto.encrypt(
+                    key,
+                    payload.getBytes(StandardCharsets.UTF_8)
+            );
+
+            send(handler, OK_PREFIX + encrypted);
+        } catch (Exception e) {
+            Gravisauth.LOGGER.warn(
+                    "Could not send the saved-login token for {}",
+                    account.getUsername(),
+                    e
+            );
+
+            send(handler, OK);
         }
     }
 

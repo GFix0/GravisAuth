@@ -17,11 +17,31 @@ offline mode; this mod replaces Mojang session auth with a Gravis account.
    configuration phase allowed to finish.
 5. The whitelist is checked again on the Gravis UUID, so `whitelist.json`
    and `ops.json` are keyed by the Gravis UUID and survive renames.
+6. On success the server also issues a **remembered-login token**, so the
+   next connection signs in without asking for the password again.
 
 The vanilla login-phase "not whitelisted" result is ignored while the mod is
 enabled, because at that point only the UUID the client advertised is known.
 Bans are never relaxed. If the mod is missing, `white-list=true` still
 applies as a fail-safe.
+
+## Remembered login
+
+After a password login the server creates a 256-bit random token and sends
+it back encrypted with the same ephemeral key as the password. The client
+stores it next to the Gravis username in `config/gravisauth-client.json`
+(the password is never written to disk). On the next connection it is
+submitted automatically as soon as the challenge arrives.
+
+- Only the SHA-256 hash is stored in `gravis.auth_tokens`; the plaintext
+  token exists client-side only.
+- Tokens are bound to the user id, so a username change on the website
+  keeps them valid. The current username is sent back on every login.
+- Each use slides the expiry forward (`tokenLifetimeDays`, default 30).
+- If the server rejects a token the client deletes it and falls back to the
+  password screen; expired tokens are pruned from the table.
+- Revoke a device by deleting its row from `auth_tokens`. Deleting the
+  client file, or the whole table, is always safe.
 
 ## Server setup
 
@@ -34,6 +54,7 @@ applies as a fail-safe.
   "maxAttempts": 3,
   "throttleAttempts": 10,
   "throttleMinutes": 10,
+  "tokenLifetimeDays": 30,
   "database": {
     "host": "127.0.0.1",
     "port": 3306,
@@ -44,8 +65,18 @@ applies as a fail-safe.
 }
 ```
 
-The database user only needs `SELECT` on `gravis.users`. The mod bundles the
-MariaDB JDBC driver and bcrypt, so nothing else has to be installed.
+The database user needs `SELECT` on `gravis.users` and
+`SELECT, INSERT, UPDATE, DELETE` on `gravis.auth_tokens`. Create the table
+with `docs/auth_tokens.sql`:
+
+```sql
+GRANT SELECT ON gravis.users TO 'gravisauth'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE
+  ON gravis.auth_tokens TO 'gravisauth'@'localhost';
+```
+
+The mod bundles the MariaDB JDBC driver and bcrypt, so nothing else has to
+be installed.
 
 ## Client setup
 
