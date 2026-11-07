@@ -23,6 +23,7 @@ loom {
 
 
 repositories {
+    mavenCentral()
     // Add repositories to retrieve artifacts from in here.
     // You should only use this when depending on other mods because
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -38,7 +39,21 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    /*
+     * Both libraries are needed at runtime on a dedicated server, so they
+     * must be bundled into the mod jar. Without "include" the build only
+     * puts them on the development classpath and production fails with a
+     * ClassNotFoundException.
+     */
     implementation "org.mariadb.jdbc:mariadb-java-client:3.5.6"
+    include "org.mariadb.jdbc:mariadb-java-client:3.5.6"
+
+    implementation "at.favre.lib:bcrypt:0.10.2"
+    include "at.favre.lib:bcrypt:0.10.2"
+    include "at.favre.lib:bytes:1.6.1"
+
+    // LuckPerms is provided by the server, never bundled.
+    compileOnly "net.luckperms:api:5.4"
 }
 
 processResources {

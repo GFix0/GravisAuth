@@ -2,7 +2,30 @@ package mod.gfix.dev.gravisauth.config;
 
 public class GravisAuthConfig {
 
+    /**
+     * Master switch. When false the mod does nothing and the server
+     * behaves like a normal offline-mode server.
+     */
     public boolean enabled = false;
+
+    /**
+     * How long a player may stay in the configuration phase without
+     * authenticating before being disconnected.
+     */
+    public int loginTimeoutSeconds = 120;
+
+    /**
+     * Failed password attempts allowed per connection.
+     */
+    public int maxAttempts = 3;
+
+    /**
+     * Failed attempts allowed per username across connections inside
+     * the throttle window.
+     */
+    public int throttleAttempts = 10;
+
+    public int throttleMinutes = 10;
 
     public Database database = new Database();
 

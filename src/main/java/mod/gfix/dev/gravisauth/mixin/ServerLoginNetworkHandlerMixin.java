@@ -1,124 +1,34 @@
 package mod.gfix.dev.gravisauth.mixin;
 
 import com.mojang.authlib.GameProfile;
-import mod.gfix.dev.gravisauth.Gravisauth;
-import mod.gfix.dev.gravisauth.account.GravisAccount;
-import mod.gfix.dev.gravisauth.account.GravisAccountManager;
-import net.minecraft.network.packet.c2s.login.EnterConfigurationC2SPacket;
+import mod.gfix.dev.gravisauth.auth.LoginWhitelistPhase;
 import net.minecraft.server.network.ServerLoginNetworkHandler;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * The login phase runs before GravisAuth knows the account, so the
+ * vanilla whitelist check can only see the UUID the client sent. Mark
+ * that phase; {@link PlayerManagerMixin} lets it through.
+ */
 @Mixin(ServerLoginNetworkHandler.class)
 public abstract class ServerLoginNetworkHandlerMixin {
 
-    @Shadow
-    public abstract void disconnect(Text reason);
-
-    @Inject(method = "startVerify", at = @At("RETURN"))
-    private void gravisauth$startVerify(
+    @Inject(method = "tickVerify", at = @At("HEAD"))
+    private void gravisauth$enterLoginPhase(
             GameProfile profile,
             CallbackInfo ci
     ) {
-        if (!Gravisauth.CONFIG.enabled) {
-            return;
-        }
-
-        GravisAccountManager accountManager = new GravisAccountManager();
-
-        GravisAccount account = accountManager.findByUsername(profile.name());
-
-        if (account == null) {
-            System.out.println(
-                    "[GravisAuth] Account NOT found: " + profile.name()
-            );
-
-            this.disconnect(Text.literal(
-                    "GravisAuth: Account " + profile.name() + " not found"
-            ));
-
-            return;
-        }
-
-        System.out.println(
-                "[GravisAuth] Account found: " + account.getUsername()
-        );
-
-        System.out.println(
-                "[GravisAuth]   Gravis ID: " + account.getId()
-        );
-
-        System.out.println(
-                "[GravisAuth]   Verified: " + account.isVerified()
-        );
-
-        if (!account.isVerified()) {
-            System.out.println(
-                    "[GravisAuth] Account is not verified!"
-            );
-
-            this.disconnect(Text.literal(
-                    "GravisAuth: Please verify your email first"
-            ));
-
-            return;
-        }
-
-        System.out.println(
-                "[GravisAuth]   Gravis UUID: " + account.getUuid()
-        );
-
-        GameProfile gravisProfile = new GameProfile(
-                account.getUuid(),
-                account.getUsername()
-        );
-
-        ((ServerLoginNetworkHandlerAccessor) (Object) this)
-                .gravisAuth$setProfile(gravisProfile);
-
-        System.out.println(
-                "[GravisAuth] Profile replaced successfully!"
-        );
+        LoginWhitelistPhase.enter();
     }
 
-    @Inject(method = "onEnterConfiguration", at = @At("HEAD"))
-    private void gravisauth$onEnterConfiguration(
-            EnterConfigurationC2SPacket packet,
+    @Inject(method = "tickVerify", at = @At("RETURN"))
+    private void gravisauth$leaveLoginPhase(
+            GameProfile profile,
             CallbackInfo ci
     ) {
-        if (!Gravisauth.CONFIG.enabled) {
-            return;
-        }
-
-        System.out.println(
-                "[GravisAuth] Entering configuration"
-        );
-
-        GameProfile profile =
-                ((ServerLoginNetworkHandlerAccessor) (Object) this)
-                        .gravisAuth$getProfile();
-
-        if (profile == null) {
-            System.out.println(
-                    "[GravisAuth] Current profile is null!"
-            );
-            return;
-        }
-
-        System.out.println(
-                "[GravisAuth] Current profile:"
-        );
-
-        System.out.println(
-                "[GravisAuth]   Name: " + profile.name()
-        );
-
-        System.out.println(
-                "[GravisAuth]   UUID: " + profile.id()
-        );
+        LoginWhitelistPhase.exit();
     }
 }
