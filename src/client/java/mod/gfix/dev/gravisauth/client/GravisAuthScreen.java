@@ -187,14 +187,23 @@ public class GravisAuthScreen extends Screen {
                     0xFF5555
             );
         }
+
+        context.drawCenteredTextWithShadow(
+                this.textRenderer,
+                Text.literal("Press Esc to cancel"),
+                this.width / 2,
+                this.height / 2 + 62,
+                0x808080
+        );
     }
 
     /**
-     * The connection cannot continue without a login, so Escape must not
-     * close the screen.
+     * Escape abandons the login: the connection is closed (which releases
+     * the slot the server holds) and the player returns to the server list.
      */
     @Override
     public void close() {
+        ClientAuthState.cancel();
     }
 
     @Override

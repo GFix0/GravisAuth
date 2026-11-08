@@ -1,10 +1,16 @@
 package mod.gfix.dev.gravisauth.client;
 
 import mod.gfix.dev.gravisauth.crypto.GravisCrypto;
+import mod.gfix.dev.gravisauth.mixin.client.ClientCommonNetworkHandlerAccessor;
 import mod.gfix.dev.gravisauth.network.GravisAuthNetworking;
 import mod.gfix.dev.gravisauth.network.GravisAuthPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
+import net.minecraft.client.network.ClientConfigurationNetworkHandler;
+import net.minecraft.network.ClientConnection;
+import net.minecraft.text.Text;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +30,13 @@ public final class ClientAuthState {
     private static PublicKey serverKey;
     private static KeyPair keyPair;
 
+    /*
+     * The configuration-phase connection. Kept so cancelling the login can
+     * close it: until the socket goes away the server keeps the slot
+     * reserved for the configured login timeout.
+     */
+    private static ClientConnection connection;
+
     private static String pendingUsername;
     private static String busyMessage;
     private static boolean tokenAttempt;
@@ -31,7 +44,15 @@ public final class ClientAuthState {
     private ClientAuthState() {
     }
 
-    public static void handle(String message) {
+    public static void handle(
+            String message,
+            ClientConfigurationNetworkHandler handler
+    ) {
+        if (handler != null) {
+            connection = ((ClientCommonNetworkHandlerAccessor) handler)
+                    .gravisAuth$getConnection();
+        }
+
         if (message == null) {
             return;
         }
@@ -113,6 +134,7 @@ public final class ClientAuthState {
         busyMessage = null;
         tokenAttempt = false;
         pendingUsername = username;
+        connection = null;
 
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -121,6 +143,28 @@ public final class ClientAuthState {
                 client.setScreen(null);
             }
         });
+    }
+
+    /**
+     * Abandons the login: closes the connection and returns to the server
+     * list. Closing the socket is what releases the slot the server reserves
+     * for the login handshake.
+     */
+    public static void cancel() {
+        ClientConnection active = connection;
+        connection = null;
+
+        GravisauthClient.LOGGER.info("Login cancelled by the player");
+
+        reset();
+
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (active != null) {
+            active.disconnect(Text.literal("Login cancelled"));
+        }
+
+        client.setScreen(new MultiplayerScreen(new TitleScreen()));
     }
 
     private static void fail(String reason) {
@@ -183,8 +227,8 @@ public final class ClientAuthState {
             String prefix,
             String credentials
     ) {
-        if (!isReady()) {
-            showError("Not connected to the authentication server");
+        if (!isReady() || connection == null || !connection.isOpen()) {
+            showError("Connection to the server was lost. Press Esc to go back.");
             return;
         }
 
@@ -207,7 +251,7 @@ public final class ClientAuthState {
                     "Could not send the authentication response", e
             );
 
-            showError("Could not contact the server");
+            showError("Connection to the server was lost. Press Esc to go back.");
         }
     }
 

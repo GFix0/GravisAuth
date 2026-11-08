@@ -96,7 +96,8 @@ public final class AuthTokens {
         String tokenHash = hash(token);
 
         String select = """
-                SELECT users.id, users.username
+                SELECT users.id, users.username,
+                       users.skin_url, users.skin_model
                 FROM auth_tokens
                 JOIN users ON users.id = auth_tokens.user_id
                 WHERE auth_tokens.token_hash = ?
@@ -108,6 +109,8 @@ public final class AuthTokens {
         try (Connection connection = GravisDatabase.connect()) {
             int userId;
             String username;
+            String skinUrl;
+            String skinModel;
 
             try (PreparedStatement statement =
                          connection.prepareStatement(select)) {
@@ -120,6 +123,8 @@ public final class AuthTokens {
 
                     userId = result.getInt("id");
                     username = result.getString("username");
+                    skinUrl = result.getString("skin_url");
+                    skinModel = result.getString("skin_model");
                 }
             }
 
@@ -139,7 +144,9 @@ public final class AuthTokens {
                     userId,
                     username,
                     true,
-                    GravisUuid.fromUserId(userId)
+                    GravisUuid.fromUserId(userId),
+                    skinUrl,
+                    skinModel
             );
         }
     }

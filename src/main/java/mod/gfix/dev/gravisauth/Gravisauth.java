@@ -9,6 +9,7 @@ import mod.gfix.dev.gravisauth.config.GravisAuthConfig;
 import mod.gfix.dev.gravisauth.config.GravisAuthConfigManager;
 import mod.gfix.dev.gravisauth.database.GravisDatabase;
 import mod.gfix.dev.gravisauth.network.GravisAuthNetworking;
+import mod.gfix.dev.gravisauth.skin.SkinSync;
 
 public class Gravisauth implements ModInitializer {
 
@@ -61,6 +62,7 @@ public class Gravisauth implements ModInitializer {
         }
 
         GravisAuthNetworking.initialize();
+        SkinSync.initialize();
 
         if (!CONFIG.enabled) {
             LOGGER.info("GravisAuth server functionality is disabled.");

@@ -45,6 +45,7 @@ public abstract class ServerConfigurationNetworkHandlerMixin {
             );
 
             AuthSessions.scheduleTimeout(handler, session);
+            AuthSessions.scheduleKeepAlive(handler, session);
 
             GameProfile profile =
                     ((ServerConfigurationNetworkHandlerAccessor) handler)

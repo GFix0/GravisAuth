@@ -57,7 +57,8 @@ public class GravisAccountManager {
         }
 
         String sql = """
-                SELECT id, username, email_verified, password_hash
+                SELECT id, username, email_verified, password_hash,
+                       skin_url, skin_model
                 FROM users
                 WHERE username = ?
                 LIMIT 1
@@ -109,7 +110,9 @@ public class GravisAccountManager {
                                 id,
                                 databaseName,
                                 true,
-                                GravisUuid.fromUserId(id)
+                                GravisUuid.fromUserId(id),
+                                result.getString("skin_url"),
+                                result.getString("skin_model")
                         )
                 );
             }

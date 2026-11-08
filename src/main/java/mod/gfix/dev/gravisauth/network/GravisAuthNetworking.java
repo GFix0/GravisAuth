@@ -13,6 +13,7 @@ import mod.gfix.dev.gravisauth.crypto.GravisCrypto;
 import mod.gfix.dev.gravisauth.mixin.ClientConnectionAccessor;
 import mod.gfix.dev.gravisauth.mixin.ServerCommonNetworkHandlerAccessor;
 import mod.gfix.dev.gravisauth.mixin.ServerConfigurationNetworkHandlerAccessor;
+import mod.gfix.dev.gravisauth.skin.SkinRegistry;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking;
 import net.minecraft.network.ClientConnection;
@@ -34,6 +35,11 @@ public final class GravisAuthNetworking {
     private static final String FAIL_PREFIX = "fail:";
     private static final String OK = "ok";
     private static final String OK_PREFIX = "ok:";
+
+    /**
+     * No-op payload that only exists to keep the socket from timing out.
+     */
+    private static final String KEEP_ALIVE = "ping";
 
     /**
      * Machine-readable reason sent when a saved login is no longer valid.
@@ -80,6 +86,15 @@ public final class GravisAuthNetworking {
             String publicKey
     ) {
         send(handler, CHALLENGE_PREFIX + publicKey);
+    }
+
+    /**
+     * Resets the client's read timeout while it is still authenticating.
+     */
+    public static void sendKeepAlive(
+            ServerConfigurationNetworkHandler handler
+    ) {
+        send(handler, KEEP_ALIVE);
     }
 
     private static void send(
@@ -243,6 +258,12 @@ public final class GravisAuthNetworking {
             SecretKeySpec key
     ) {
         session.setAuthenticated(true);
+
+        SkinRegistry.put(
+                account.getUuid(),
+                account.getSkinUrl(),
+                account.getSkinModel()
+        );
 
         GameProfile profile = new GameProfile(
                 account.getUuid(),

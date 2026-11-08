@@ -4,6 +4,8 @@
   "package": "mod.gfix.dev.gravisauth.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "ClientCommonNetworkHandlerAccessor",
+    "PlayerListEntryMixin"
   ],
   "injectors": {
     "defaultRequire": 1
