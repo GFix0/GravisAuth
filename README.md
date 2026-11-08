@@ -53,11 +53,15 @@ embedded credentials and non-standard ports are rejected by the website,
 the server and the client.
 
 When an authenticated player enters the play phase the server sends the
-URL table on `gravisauth:skins`. Every client downloads the texture itself
-(cached under `gravisauth-skins/` in the game directory) and overrides
-`PlayerListEntry#getSkinTextures`, which covers the player renderer, the
-tab list and the inventory. A change applies on the next join; clearing the
-URL restores the default skin. Add the columns with `docs/skins.sql`.
+URL table on `gravisauth:skins`, together with the receiver's own Gravis
+UUID. Every client downloads the textures itself (cached under
+`gravisauth-skins/` in the game directory) and overrides both
+`PlayerListEntry#getSkinTextures` and `AbstractClientPlayerEntity#getSkin`.
+The first covers the player renderer, the tab list and the inventory for
+other players; the second is needed for your own model, because the client
+renders it with the profile it logged in with, which still carries the
+offline UUID. A change applies on the next join; clearing the URL restores
+the default skin. Add the columns with `docs/skins.sql`.
 
 ## Server setup
 
