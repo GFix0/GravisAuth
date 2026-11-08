@@ -97,7 +97,7 @@ public final class SkinSync {
         if (!snapshot.isEmpty()) {
             ServerPlayNetworking.send(
                     player,
-                    new GravisSkinPayload(snapshot)
+                    new GravisSkinPayload(snapshot, player.getUuid())
             );
         }
 
@@ -123,12 +123,15 @@ public final class SkinSync {
                         skin.model()
                 );
 
-        GravisSkinPayload announcement =
-                new GravisSkinPayload(List.of(self));
-
         for (ServerPlayerEntity other : online) {
             if (other != player) {
-                ServerPlayNetworking.send(other, announcement);
+                ServerPlayNetworking.send(
+                        other,
+                        new GravisSkinPayload(
+                                List.of(self),
+                                other.getUuid()
+                        )
+                );
             }
         }
 

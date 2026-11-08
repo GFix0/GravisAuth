@@ -12,12 +12,17 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The skin table a client needs to render other Gravis players.
+ * The skin table a client needs to render Gravis players.
  *
  * Vanilla only knows the Mojang session server, which has never heard of
  * Gravis UUIDs, so the server pushes the URLs instead.
+ *
+ * {@code self} is the Gravis UUID of the receiving player. The client
+ * needs it because a client renders its own player with the profile it
+ * used to log in, which still carries the offline (non-Gravis) UUID.
  */
-public record GravisSkinPayload(List<Entry> entries) implements CustomPayload {
+public record GravisSkinPayload(List<Entry> entries, UUID self)
+        implements CustomPayload {
 
     public static final Identifier ID =
             Identifier.of("gravisauth", "skins");
@@ -40,7 +45,13 @@ public record GravisSkinPayload(List<Entry> entries) implements CustomPayload {
             PacketCodecs.collection(ArrayList::new, ENTRY_CODEC, 64);
 
     public static final PacketCodec<RegistryByteBuf, GravisSkinPayload> CODEC =
-            LIST_CODEC.xmap(GravisSkinPayload::new, GravisSkinPayload::entries);
+            PacketCodec.tuple(
+                    LIST_CODEC,
+                    GravisSkinPayload::entries,
+                    Uuids.PACKET_CODEC,
+                    GravisSkinPayload::self,
+                    GravisSkinPayload::new
+            );
 
     @Override
     public CustomPayload.Id<? extends CustomPayload> getId() {

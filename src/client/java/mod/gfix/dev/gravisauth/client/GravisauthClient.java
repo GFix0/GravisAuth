@@ -32,7 +32,8 @@ public class GravisauthClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 GravisSkinPayload.TYPE,
                 (payload, context) -> GravisSkinRegistry.apply(
-                        payload.entries()
+                        payload.entries(),
+                        payload.self()
                 )
         );
 

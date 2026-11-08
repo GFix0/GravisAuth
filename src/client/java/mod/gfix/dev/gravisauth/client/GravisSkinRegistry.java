@@ -31,10 +31,21 @@ public final class GravisSkinRegistry {
     private static final Map<UUID, Entry> SKINS =
             new ConcurrentHashMap<>();
 
+    /*
+     * The Gravis UUID of this client's own player. A client renders its
+     * own player with the profile it logged in with, whose UUID is the
+     * offline one, so the player-list lookup never finds the Gravis entry.
+     */
+    private static volatile UUID selfUuid;
+
     private GravisSkinRegistry() {
     }
 
-    public static void apply(List<GravisSkinPayload.Entry> entries) {
+    public static void apply(List<GravisSkinPayload.Entry> entries, UUID self) {
+        if (self != null) {
+            selfUuid = self;
+        }
+
         if (entries == null || entries.isEmpty()) {
             return;
         }
@@ -101,7 +112,15 @@ public final class GravisSkinRegistry {
         return entry == null ? null : entry.textures();
     }
 
+    /**
+     * @return the custom skin for this client's own player, or null
+     */
+    public static SkinTextures getSelf() {
+        return get(selfUuid);
+    }
+
     public static void clear() {
+        selfUuid = null;
         SKINS.clear();
     }
 
