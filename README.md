@@ -19,6 +19,8 @@ offline mode; this mod replaces Mojang session auth with a Gravis account.
    and `ops.json` are keyed by the Gravis UUID and survive renames.
 6. On success the server also issues a **remembered-login token**, so the
    next connection signs in without asking for the password again.
+7. In the play phase the server publishes the skin table; each client
+   downloads the player-chosen skin itself (see below).
 
 The vanilla login-phase "not whitelisted" result is ignored while the mod is
 enabled, because at that point only the UUID the client advertised is known.
@@ -42,6 +44,20 @@ submitted automatically as soon as the challenge arrives.
   password screen; expired tokens are pruned from the table.
 - Revoke a device by deleting its row from `auth_tokens`. Deleting the
   client file, or the whole table, is always safe.
+
+## Skins
+
+Players set their skin on the website (`users.skin_url`, `users.skin_model`).
+The URL must be a direct HTTPS link to a 64x64 PNG; IP literals, localhost,
+embedded credentials and non-standard ports are rejected by the website,
+the server and the client.
+
+When an authenticated player enters the play phase the server sends the
+URL table on `gravisauth:skins`. Every client downloads the texture itself
+(cached under `gravisauth-skins/` in the game directory) and overrides
+`PlayerListEntry#getSkinTextures`, which covers the player renderer, the
+tab list and the inventory. A change applies on the next join; clearing the
+URL restores the default skin. Add the columns with `docs/skins.sql`.
 
 ## Server setup
 
@@ -92,8 +108,10 @@ The Minecraft account name no longer matters; the Gravis account decides the
 in-game name and UUID. Rename yourself on the website and the change applies
 the next time you join.
 
-> The login screen has to be filled in promptly: the vanilla client drops a
-> connection that has not finished configuring after roughly 30 seconds.
+> The server sends a small keepalive every 10 seconds while a login is
+> pending, so the connection no longer drops after the vanilla 30-second
+> read timeout. Pressing Escape cancels the login and returns to the
+> server list.
 
 ## Building
 
