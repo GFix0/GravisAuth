@@ -19,6 +19,18 @@ loom {
             sourceSet sourceSets.client
         }
     }
+
+    /*
+     * Second client with its own game directory, for testing two Gravis
+     * accounts against each other (gradlew runClient2).
+     */
+    runs {
+        client2 {
+            client()
+            configName = "client2"
+            runDir = "run2"
+        }
+    }
 }
 
 

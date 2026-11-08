@@ -125,3 +125,14 @@ the next time you join.
 
 Output: `build/libs/gravisauth-1.0-SNAPSHOT.jar`. LuckPerms is `compileOnly`;
 it must be present on the server, never bundled.
+
+### Testing two accounts locally
+
+```
+./gradlew runClient      # run/  , saved login for one account
+./gradlew runClient2     # run2/ , saved login for a second account
+```
+
+Both clients need the same mod set; copy `run/mods/*.jar` into `run2/mods/`
+the first time, otherwise the server's `carpet-shadow` registry entry is
+unknown to the second client and it is disconnected.

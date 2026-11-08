@@ -16,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,6 +38,9 @@ public final class GravisSkinRegistry {
      * offline one, so the player-list lookup never finds the Gravis entry.
      */
     private static volatile UUID selfUuid;
+
+    private static final Set<UUID> LOGGED =
+            ConcurrentHashMap.newKeySet();
 
     private GravisSkinRegistry() {
     }
@@ -109,6 +113,13 @@ public final class GravisSkinRegistry {
     public static SkinTextures get(UUID uuid) {
         Entry entry = uuid == null ? null : SKINS.get(uuid);
 
+        if (entry != null && LOGGED.add(uuid)) {
+            GravisauthClient.LOGGER.info(
+                    "Using the custom skin for {}",
+                    uuid
+            );
+        }
+
         return entry == null ? null : entry.textures();
     }
 
@@ -121,6 +132,7 @@ public final class GravisSkinRegistry {
 
     public static void clear() {
         selfUuid = null;
+        LOGGED.clear();
         SKINS.clear();
     }
 
