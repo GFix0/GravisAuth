@@ -108,11 +108,20 @@ public final class SkinSync {
                 online.size()
         );
 
-        GravisSkinPayload.Entry self = entryOf(player);
+        /*
+         * Always announce, even without a skin: a player who removed
+         * their URL must clear the texture on clients that already
+         * cached it. An empty URL means "use the default skin".
+         */
+        SkinRegistry.Skin skin = SkinRegistry.get(player.getUuid());
 
-        if (self == null) {
-            return;
-        }
+        GravisSkinPayload.Entry self = skin == null
+                ? new GravisSkinPayload.Entry(player.getUuid(), "", "wide")
+                : new GravisSkinPayload.Entry(
+                        player.getUuid(),
+                        skin.url(),
+                        skin.model()
+                );
 
         GravisSkinPayload announcement =
                 new GravisSkinPayload(List.of(self));
@@ -124,8 +133,9 @@ public final class SkinSync {
         }
 
         Gravisauth.LOGGER.info(
-                "Announced {}'s skin to {} player(s)",
+                "Announced {}'s skin ({}) to {} player(s)",
                 player.getGameProfile().name(),
+                skin == null ? "default" : skin.url(),
                 Math.max(0, online.size() - 1)
         );
     }
