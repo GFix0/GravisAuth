@@ -71,7 +71,18 @@ public final class SkinSync {
         }
 
         List<ServerPlayerEntity> online =
-                server.getPlayerManager().getPlayerList();
+                new ArrayList<>(server.getPlayerManager().getPlayerList());
+
+        /*
+         * The JOIN event fires before the joining player is listed, so
+         * add them explicitly; otherwise the snapshot is empty on the
+         * first join and the player never receives their own skin.
+         */
+        if (online.stream().noneMatch(
+                other -> other.getUuid().equals(player.getUuid())
+        )) {
+            online.add(player);
+        }
 
         List<GravisSkinPayload.Entry> snapshot = new ArrayList<>();
 
@@ -91,9 +102,10 @@ public final class SkinSync {
         }
 
         Gravisauth.LOGGER.info(
-                "Sent {} skin(s) to {}",
+                "Sent {} skin(s) to {} ({} online)",
                 snapshot.size(),
-                player.getGameProfile().name()
+                player.getGameProfile().name(),
+                online.size()
         );
 
         GravisSkinPayload.Entry self = entryOf(player);
