@@ -15,6 +15,9 @@
     ],
     "main": [
       "mod.gfix.dev.gravisauth.Gravisauth"
+    ],
+    "modmenu": [
+      "mod.gfix.dev.gravisauth.client.GravisModMenuIntegration"
     ]
   },
   "mixins": [
@@ -28,5 +31,8 @@
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}"
+  },
+  "recommends": {
+    "modmenu": ">=17.0.0"
   }
 }

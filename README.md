@@ -45,6 +45,23 @@ submitted automatically as soon as the challenge arrives.
 - Revoke a device by deleting its row from `auth_tokens`. Deleting the
   client file, or the whole table, is always safe.
 
+### Logging out in game
+
+Install [Mod Menu](https://modrinth.com/mod/modmenu) to manage the saved
+login without editing files. Open **Mods → GravisAuth** from the title
+screen or the pause menu:
+
+- **Log out & reconnect** deletes the saved token, leaves the server and
+  rejoins it, so the sign-in screen appears and another Gravis account can
+  be used.
+- **Log out & disconnect** deletes the token and returns to the server list.
+- **Forget saved login** deletes the token while not connected.
+- **Open server list** is the login path from the title screen: joining a
+  Gravis server opens the sign-in screen when no token is stored.
+
+Mod Menu is optional. GravisAuth compiles against its small API but does
+not bundle it, and no other behaviour depends on it.
+
 ## Skins
 
 Players set their skin on the website (`users.skin_url`, `users.skin_model`).
@@ -107,6 +124,8 @@ API, and the registry contents include modded entries. Install:
 2. **Fabric API** `0.141.6+1.21.11` in `.minecraft/mods`.
 3. **`gravisauth-1.0-SNAPSHOT.jar`** in `.minecraft/mods` (the same jar the
    server uses).
+4. Optional: **Mod Menu** `17.0.1` in `.minecraft/mods` for the in-game
+   logout screen described above.
 
 The Minecraft account name no longer matters; the Gravis account decides the
 in-game name and UUID. Rename yourself on the website and the change applies
