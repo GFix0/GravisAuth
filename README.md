@@ -120,7 +120,8 @@ be installed.
 A vanilla client cannot join: the server requires Fabric Loader and Fabric
 API, and the registry contents include modded entries. Install:
 
-1. **Fabric Loader 1.21.11** (launcher profile).
+1. **Fabric Loader 0.19.3 or newer** for 1.21.11 (0.20.1 is the current
+   build; the mod declares `>=0.19.3`, so anything newer works too).
 2. **Fabric API** `0.141.6+1.21.11` in `.minecraft/mods`.
 3. **`gravisauth-1.0.0-beta.1.jar`** in `.minecraft/mods` (the same jar the
    server uses).
