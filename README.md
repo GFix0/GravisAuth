@@ -122,7 +122,7 @@ API, and the registry contents include modded entries. Install:
 
 1. **Fabric Loader 1.21.11** (launcher profile).
 2. **Fabric API** `0.141.6+1.21.11` in `.minecraft/mods`.
-3. **`gravisauth-1.0-SNAPSHOT.jar`** in `.minecraft/mods` (the same jar the
+3. **`gravisauth-1.0.0-beta.1.jar`** in `.minecraft/mods` (the same jar the
    server uses).
 4. Optional: **Mod Menu** `17.0.1` in `.minecraft/mods` for the in-game
    logout screen described above.
@@ -142,7 +142,7 @@ the next time you join.
 ./gradlew build
 ```
 
-Output: `build/libs/gravisauth-1.0-SNAPSHOT.jar`. LuckPerms is `compileOnly`;
+Output: `build/libs/gravisauth-1.0.0-beta.1.jar`. LuckPerms is `compileOnly`;
 it must be present on the server, never bundled.
 
 ### Testing two accounts locally
